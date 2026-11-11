@@ -59,6 +59,17 @@ const customersData = [
 
 type Customer = typeof customersData[0];
 
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "active":
+      return "bg-green-500";
+    case "inactive":
+      return "bg-gray-500";
+    default:
+      return "bg-blue-500";
+  }
+};
+
 const CustomerDetails = ({ customer }: { customer: Customer }) => {
   return (
     <div className="space-y-4">
@@ -121,17 +132,6 @@ const Customers = () => {
     customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return "bg-green-500";
-      case "inactive":
-        return "bg-gray-500";
-      default:
-        return "bg-blue-500";
-    }
-  };
 
   const handleDelete = (customerId: number) => {
     toast({

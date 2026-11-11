@@ -27,7 +27,7 @@ const menuItems = [
   { icon: Wrench, label: "Equipment", href: "/equipment" },
   { icon: ShieldCheck, label: "Safety", href: "/safety" },
   { icon: Building, label: "Suppliers", href: "/suppliers" },
-  { icon: Receipt, label: "invoicing" , href: "/invoicing"},
+  { icon: Receipt, label: "Invoicing", href: "/invoicing" },
   { icon: Settings, label: "Settings", href: "/settings" }
 ];
 
