@@ -1,56 +1,138 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
+/*
+  Design tokens. Cool-grey surfaces, slate-blue primary, one amber status accent.
+  Values are HSL triplets so Tailwind can apply alpha.
+*/
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 216 20% 95%;
+    --foreground: 218 28% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 218 28% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 186 75% 32%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 186 75% 32%;
-    --radius: 0.75rem;
+    --popover-foreground: 218 28% 14%;
+    --primary: 214 38% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 18% 92%;
+    --secondary-foreground: 218 28% 18%;
+    --muted: 216 20% 96%;
+    --muted-foreground: 216 12% 36%;
+    --accent: 216 20% 93%;
+    --accent-foreground: 218 28% 14%;
+    --destructive: 4 62% 44%;
+    --destructive-foreground: 0 0% 100%;
+    --warning: 36 92% 46%;
+    --warning-foreground: 30 80% 24%;
+    --success: 160 45% 30%;
+    --border: 216 16% 87%;
+    --input: 216 14% 76%;
+    --ring: 214 55% 48%;
+    --radius: 0.375rem;
+
+    --chart-1: 214 38% 40%;
+    --chart-2: 36 88% 48%;
+    --chart-3: 216 12% 62%;
+    --chart-negative: 6 42% 54%;
+    --chart-grid: 216 16% 90%;
+
+    --sidebar-background: 218 30% 15%;
+    --sidebar-foreground: 216 22% 82%;
+    --sidebar-muted: 216 14% 60%;
+    --sidebar-accent: 218 24% 22%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 218 22% 22%;
+    --sidebar-ring: 214 70% 68%;
+  }
+
+  .dark {
+    --background: 218 22% 9%;
+    --foreground: 216 20% 90%;
+    --card: 218 20% 12%;
+    --card-foreground: 216 20% 90%;
+    --popover: 218 20% 13%;
+    --popover-foreground: 216 20% 90%;
+    --primary: 214 52% 68%;
+    --primary-foreground: 218 35% 10%;
+    --secondary: 218 16% 18%;
+    --secondary-foreground: 216 20% 90%;
+    --muted: 218 18% 15%;
+    --muted-foreground: 216 12% 66%;
+    --accent: 218 16% 19%;
+    --accent-foreground: 216 20% 94%;
+    --destructive: 4 68% 62%;
+    --destructive-foreground: 218 35% 8%;
+    --warning: 38 90% 58%;
+    --warning-foreground: 40 92% 70%;
+    --success: 158 42% 58%;
+    --border: 218 14% 21%;
+    --input: 218 12% 32%;
+    --ring: 214 70% 68%;
+
+    --chart-1: 214 52% 66%;
+    --chart-2: 38 88% 58%;
+    --chart-3: 216 10% 50%;
+    --chart-negative: 4 62% 62%;
+    --chart-grid: 218 14% 19%;
+
+    --sidebar-background: 218 24% 7%;
+    --sidebar-foreground: 216 18% 78%;
+    --sidebar-muted: 216 12% 56%;
+    --sidebar-accent: 218 18% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 218 14% 16%;
+    --sidebar-ring: 214 70% 68%;
   }
 
   * {
     @apply border-border;
   }
 
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-sm text-foreground antialiased;
+    font-feature-settings: "tnum" 1, "zero" 0;
   }
 
-  .glass-card {
-    @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-lg;
-  }
-
-  .animate-in {
-    animation: fade-in 0.5s ease-out;
+  ::selection {
+    background: hsl(var(--primary) / 0.22);
   }
 }
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+@layer components {
+  /* Condensed cut of the text face, used for titles and large figures. */
+  .font-display {
+    font-stretch: 82%;
+    letter-spacing: -0.005em;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Label and value pair used inside detail dialogs and record cards. */
+  .field-label {
+    @apply text-xs text-muted-foreground;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
