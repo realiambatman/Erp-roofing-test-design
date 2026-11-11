@@ -8,13 +8,13 @@ This is a UI design exercise, not a working ERP. There is no backend, database, 
 
 | Route | Page | What it shows |
 | --- | --- | --- |
-| `/` | Dashboard | KPI cards, recent activity, upcoming deadlines |
-| `/projects` | Projects | Project cards with status, searchable |
+| `/` | Dashboard | KPI strip, recent activity, upcoming deadlines |
+| `/projects` | Projects | Project records with status and progress, searchable |
 | `/estimates` | Estimates & Quotes | Estimate list with a detail dialog |
 | `/analytics` | Analytics | Sales, expenses and profit charts (Recharts) |
-| `/employees` | Employees | Team member cards, searchable |
+| `/employees` | Employees | Team member records, searchable |
 | `/customers` | Customers | Customer table with a detail dialog |
-| `/inventory` | Inventory | Stock table with value totals |
+| `/inventory` | Inventory | Stock table with value totals, search and a reorder filter |
 | `/schedule` | Schedule | Calendar and list views of scheduled jobs |
 | `/payroll` | Payroll | Payroll summary table |
 | `/work-orders` | Work Orders | Work order table with status and priority badges |
@@ -26,7 +26,7 @@ This is a UI design exercise, not a working ERP. There is no backend, database, 
 | `/settings` | Settings | Settings form layout |
 | `*` | Not found | 404 page |
 
-What actually works: navigation between pages, client-side search filtering on the list pages, tabs, detail dialogs, the schedule calendar/list toggle, and responsive layout with a collapsible sidebar. Buttons such as "Add", "Edit" and "Delete" are visual only (delete on the Customers page just shows a toast).
+What actually works: navigation between pages, client-side search filtering on the list pages, the status filter on Time Tracking, the reorder filter on Inventory, tabs, detail dialogs, the schedule calendar/list toggle, the light/dark theme toggle (top bar, or Settings > Preferences), and a responsive layout whose sidebar collapses to an icon rail on desktop and opens as a drawer on phones. Buttons such as "Add", "Edit" and "Delete" are visual only (delete on the Customers page just shows a toast).
 
 ## Tech stack
 
@@ -37,6 +37,17 @@ What actually works: navigation between pages, client-side search filtering on t
 - React Router 6
 - Recharts for charts
 - lucide-react icons, date-fns, react-day-picker, sonner
+- next-themes for the light/dark theme, IBM Plex Sans (self-hosted through `@fontsource-variable/ibm-plex-sans`)
+
+## Design system
+
+The look is a dense, quiet operations tool rather than a marketing page.
+
+- **Colour**: cool-grey surfaces, a slate-blue primary and one amber accent reserved for things that need attention. Red appears only for losses and critical states. All colours are HSL CSS variables in `src/index.css`, with a full `.dark` set; charts read the same variables through `src/lib/chart-theme.ts`.
+- **Type**: IBM Plex Sans throughout on a compact scale (13px body). Page titles and large figures use the condensed width of the same variable font (`.font-display`). Numbers are tabular everywhere.
+- **Status**: every status and priority goes through `src/components/StatusBadge.tsx`, which maps the text to one of five tones (neutral, info, attention, critical, success).
+- **Money**: every rupee amount goes through `formatINR` in `src/lib/format.ts` (Indian digit grouping, optional paise, compact form for chart axes). Dates go through `formatDate`.
+- **Page pattern**: `PageHeader` (title, description, actions), an optional `StatStrip` (one ruled band of figures), then `Panel`s holding a filter toolbar and a table with a sticky header, right-aligned numeric columns and row hover.
 
 ## Prerequisites
 
@@ -74,15 +85,22 @@ index.html              HTML entry point
 public/                 Static assets (favicon)
 src/
   main.tsx              React entry point
-  App.tsx               Route table
-  index.css             Tailwind layers and theme CSS variables
+  App.tsx               Theme provider and route table
+  index.css             Tailwind layers and light/dark theme CSS variables
   components/
-    AppSidebar.tsx      Main navigation sidebar
+    AppSidebar.tsx      Grouped, collapsible navigation sidebar
+    navigation.ts       Sidebar groups and breadcrumb lookup
+    StatusBadge.tsx     Status pill with a shared tone vocabulary
+    ThemeToggle.tsx     Light/dark switch
+    layout/             AppLayout (shell), PageHeader, StatStrip, Panel helpers
     ui/                 shadcn/ui components used by the pages
   hooks/                use-mobile, use-toast
-  lib/utils.ts          className helper
+  lib/
+    format.ts           formatINR, formatNumber, formatDate
+    chart-theme.ts      Shared Recharts axis, grid and tooltip styling
+    utils.ts            className helper
   pages/                One file per screen, each with its own mock data
-tailwind.config.ts      Theme and animation config
+tailwind.config.ts      Theme tokens, type scale and animation config
 vite.config.ts          Vite config with the `@` -> `src` alias
 ```
 
@@ -91,7 +109,7 @@ vite.config.ts          Vite config with the `@` -> `src` alias
 - All data is mock data embedded in the page components; there is no shared data layer, so figures are not consistent between pages.
 - No persistence, forms do not submit, and most action buttons have no handler.
 - No authentication or user roles.
-- Amounts are displayed in Indian rupees, but formatting is not uniform across pages.
+- Amounts are formatted consistently as Indian rupees, but the sample figures themselves were written at very different scales from page to page.
 - The production bundle is a single chunk of roughly 950 kB (no code splitting), so Vite prints a chunk-size warning on build.
 - TypeScript runs with `strict` disabled.
 - There are no automated tests.
