@@ -129,7 +129,7 @@ const EquipmentDetails = ({ equipment }: { equipment: Equipment }) => {
       </div>
 
       <div className="overflow-hidden rounded-md border">
-        <Table containerClassName="max-h-none">
+        <Table containerClassName="max-h-none" className="table-compact">
           <TableHeader>
             <TableRow>
               <TableHead>Maintenance History</TableHead>

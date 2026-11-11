@@ -98,11 +98,11 @@ const InvoiceDetails = ({ invoice }: { invoice: Invoice }) => {
       </dl>
 
       <div className="overflow-hidden rounded-md border">
-        <Table containerClassName="max-h-none">
+        <Table containerClassName="max-h-none" className="table-compact">
           <TableHeader>
             <TableRow>
               <TableHead>Description</TableHead>
-              <TableHead numeric>Quantity/Hours</TableHead>
+              <TableHead numeric>Qty/Hours</TableHead>
               <TableHead numeric>Rate</TableHead>
               <TableHead numeric>Amount</TableHead>
             </TableRow>

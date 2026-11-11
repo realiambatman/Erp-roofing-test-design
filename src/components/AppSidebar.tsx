@@ -45,7 +45,7 @@ function NavLink({ item }: { item: NavItem }) {
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={isActive} tooltip={item.label} className="h-8">
+      <SidebarMenuButton asChild isActive={isActive} tooltip={item.label} className="h-8 max-md:h-9">
         <Link
           to={item.href}
           aria-current={isActive ? "page" : undefined}

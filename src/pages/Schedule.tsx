@@ -86,6 +86,7 @@ function AppointmentCard({ schedule }: { schedule: Appointment }) {
 
 const Schedule = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [month, setMonth] = useState<Date>(new Date());
   const [view, setView] = useState("calendar");
 
   const filteredSchedules = scheduleData.filter(
@@ -118,6 +119,8 @@ const Schedule = () => {
                 mode="single"
                 selected={date}
                 onSelect={setDate}
+                month={month}
+                onMonthChange={setMonth}
                 modifiers={{ booked: scheduledDays }}
                 modifiersClassNames={{
                   booked:
@@ -133,7 +136,10 @@ const Schedule = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setDate(scheduledDays[0])}
+                  onClick={() => {
+                    setDate(scheduledDays[0]);
+                    setMonth(scheduledDays[0]);
+                  }}
                 >
                   <CalendarDays />
                   Go to {formatDate(scheduleData[0].date)}

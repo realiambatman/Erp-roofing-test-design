@@ -81,7 +81,7 @@ const EstimateDetails = ({ estimate }: { estimate: Estimate }) => {
       </dl>
 
       <div className="overflow-hidden rounded-md border">
-        <Table containerClassName="max-h-none">
+        <Table containerClassName="max-h-none" className="table-compact">
           <TableHeader>
             <TableRow>
               <TableHead>Materials</TableHead>

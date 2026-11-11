@@ -113,7 +113,7 @@ const SupplierDetails = ({ supplier }: { supplier: Supplier }) => {
       </dl>
 
       <div className="overflow-hidden rounded-md border">
-        <Table containerClassName="max-h-none">
+        <Table containerClassName="max-h-none" className="table-compact">
           <TableHeader>
             <TableRow>
               <TableHead>Products</TableHead>
@@ -134,7 +134,7 @@ const SupplierDetails = ({ supplier }: { supplier: Supplier }) => {
       </div>
 
       <div className="overflow-hidden rounded-md border">
-        <Table containerClassName="max-h-none">
+        <Table containerClassName="max-h-none" className="table-compact">
           <TableHeader>
             <TableRow>
               <TableHead>Order History</TableHead>

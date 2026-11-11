@@ -87,7 +87,7 @@ const WorkOrderDetails = ({ workOrder }: { workOrder: WorkOrder }) => {
       </dl>
 
       <div className="overflow-hidden rounded-md border">
-        <Table containerClassName="max-h-none">
+        <Table containerClassName="max-h-none" className="table-compact">
           <TableHeader>
             <TableRow>
               <TableHead>Tasks</TableHead>
@@ -108,7 +108,7 @@ const WorkOrderDetails = ({ workOrder }: { workOrder: WorkOrder }) => {
       </div>
 
       <div className="overflow-hidden rounded-md border">
-        <Table containerClassName="max-h-none">
+        <Table containerClassName="max-h-none" className="table-compact">
           <TableHeader>
             <TableRow>
               <TableHead>Materials Usage</TableHead>

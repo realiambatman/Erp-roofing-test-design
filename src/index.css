@@ -120,6 +120,20 @@
     white-space: nowrap;
   }
 
+  /* Tables nested in dialogs: tighter gutters on phones so totals stay in view. */
+  @media (max-width: 639px) {
+    .table-compact th,
+    .table-compact td {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+      font-size: 0.75rem;
+    }
+
+    .table-compact th {
+      white-space: normal;
+    }
+  }
+
   /* Label and value pair used inside detail dialogs and record cards. */
   .field-label {
     @apply text-xs text-muted-foreground;

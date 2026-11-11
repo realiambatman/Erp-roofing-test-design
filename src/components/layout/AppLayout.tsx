@@ -12,6 +12,10 @@ const today = new Date().toLocaleDateString("en-IN", {
   year: "numeric",
 });
 
+// The sidebar component stores its state in a cookie; read it back so a
+// collapsed sidebar stays collapsed after a reload.
+const sidebarDefaultOpen = !document.cookie.split("; ").includes("sidebar:state=false");
+
 export function AppLayout() {
   const { pathname } = useLocation();
   const { group, item } = findNav(pathname);
@@ -23,7 +27,7 @@ export function AppLayout() {
   }, [pathname]);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={sidebarDefaultOpen}>
       <a
         href="#main"
         className="sr-only z-50 rounded-md bg-primary px-3 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:left-2 focus:top-2"
