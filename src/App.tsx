@@ -1,7 +1,9 @@
+import { ThemeProvider } from "next-themes";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Analytics from "./pages/Analytics";
 import Employees from "./pages/Employees";
@@ -21,31 +23,35 @@ import Suppliers from "./pages/Suppliers";
 import Invoicing from "./pages/Invoicing";
 
 const App = () => (
-  <TooltipProvider>
-    <Toaster />
-    <Sonner />
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/estimates" element={<Estimates />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/employees" element={<Employees />} />
-        <Route path="/inventory" element={<Inventory />} />
-        <Route path="/schedule" element={<Schedule />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/payroll" element={<Payroll />} />
-        <Route path="/customers" element={<Customers />} />
-        <Route path="/work-orders" element={<WorkOrders />} />
-        <Route path="/time-tracking" element={<TimeTracking />} />
-        <Route path="/equipment" element={<Equipment />} />
-        <Route path="/safety" element={<Safety />} />
-        <Route path="/suppliers" element={<Suppliers />} />
-        <Route path="/invoicing" element={<Invoicing />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
-  </TooltipProvider>
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <TooltipProvider delayDuration={200}>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/estimates" element={<Estimates />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/employees" element={<Employees />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/payroll" element={<Payroll />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/work-orders" element={<WorkOrders />} />
+            <Route path="/time-tracking" element={<TimeTracking />} />
+            <Route path="/equipment" element={<Equipment />} />
+            <Route path="/safety" element={<Safety />} />
+            <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/invoicing" element={<Invoicing />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </ThemeProvider>
 );
 
 export default App;
