@@ -5,14 +5,24 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Search, Plus, Mail, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
 const employeesData = [
-  { id: 1, name: "John Doe", role: "Software Engineer", email: "john@example.com", phone: "+1 234 567 890", department: "Engineering" },
-  { id: 2, name: "Jane Smith", role: "Product Manager", email: "jane@example.com", phone: "+1 234 567 891", department: "Product" },
-  { id: 3, name: "Mike Johnson", role: "UI Designer", email: "mike@example.com", phone: "+1 234 567 892", department: "Design" },
+  { id: 1, name: "John Doe", role: "Crew Foreman", email: "john@example.com", phone: "+1 234 567 890", department: "Installation" },
+  { id: 2, name: "Jane Smith", role: "Project Manager", email: "jane@example.com", phone: "+1 234 567 891", department: "Operations" },
+  { id: 3, name: "Mike Johnson", role: "Estimator", email: "mike@example.com", phone: "+1 234 567 892", department: "Sales" },
 ];
 
 const Employees = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const query = searchQuery.trim().toLowerCase();
+  const filteredEmployees = employeesData.filter((employee) =>
+    [employee.name, employee.role, employee.department].some((field) =>
+      field.toLowerCase().includes(query)
+    )
+  );
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -33,12 +43,18 @@ const Employees = () => {
             <Card className="p-4 glass-card animate-in">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input className="pl-9" placeholder="Search employees..." />
+                <Input
+                  className="pl-9"
+                  placeholder="Search employees..."
+                  aria-label="Search employees"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {employeesData.map((employee) => (
+              {filteredEmployees.map((employee) => (
                 <Card key={employee.id} className="p-6 glass-card animate-in">
                   <div className="space-y-4">
                     <div>
