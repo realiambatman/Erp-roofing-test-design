@@ -1,15 +1,17 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatStrip } from "@/components/layout/StatStrip";
+import { Panel } from "@/components/layout/Panel";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BadgeDollarSign, Clock, Users, Calculator } from "lucide-react";
+import { formatINR } from "@/lib/format";
 
 const mockPayrollData = [
   {
@@ -72,117 +74,64 @@ const Payroll = () => {
     0
   ) / totalEmployees;
 
+  const totalDeductions = mockPayrollData.reduce((sum, employee) => sum + employee.deductions, 0);
+
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-semibold">Payroll Management</h1>
-              <p className="text-muted-foreground mt-2">Manage employee payroll and compensation</p>
-            </div>
+    <>
+      <PageHeader title="Payroll Management" description="Manage employee payroll and compensation" />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <BadgeDollarSign className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Total Payroll</h3>
-                    <p className="text-2xl font-bold">₹{totalPayroll.toLocaleString()}</p>
-                  </div>
-                </div>
-              </Card>
+      <StatStrip
+        stats={[
+          { label: "Total Payroll", value: formatINR(totalPayroll), hint: "Net pay this period" },
+          { label: "Total Hours", value: totalHours, hint: "Including overtime" },
+          { label: "Total Employees", value: totalEmployees, hint: "On this pay run" },
+          { label: "Avg. Hourly Rate", value: formatINR(averageRate, { paise: true }), hint: "Per hour" },
+        ]}
+      />
 
-              <Card className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <Clock className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Total Hours</h3>
-                    <p className="text-2xl font-bold">{totalHours}</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <Users className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Total Employees</h3>
-                    <p className="text-2xl font-bold">{totalEmployees}</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-orange-100 rounded-lg">
-                    <Calculator className="h-6 w-6 text-orange-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Avg. Hourly Rate</h3>
-                    <p className="text-2xl font-bold">₹{averageRate.toFixed(2)}</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            <Card className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Current Pay Period</h2>
-                <span className="text-sm text-muted-foreground">Mar 1-15, 2024</span>
-              </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Hourly Rate</TableHead>
-                      <TableHead>Hours</TableHead>
-                      <TableHead>Overtime</TableHead>
-                      <TableHead>Deductions</TableHead>
-                      <TableHead>Net Pay</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockPayrollData.map((employee) => (
-                      <TableRow key={employee.id}>
-                        <TableCell className="font-medium">{employee.employeeName}</TableCell>
-                        <TableCell>{employee.position}</TableCell>
-                        <TableCell>₹{employee.hourlyRate.toFixed(2)}/hour</TableCell>
-                        <TableCell>{employee.hoursWorked}</TableCell>
-                        <TableCell>{employee.overtime}</TableCell>
-                        <TableCell>₹{employee.deductions.toFixed(2)}</TableCell>
-                        <TableCell>₹{employee.netPay.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              employee.status === "Paid"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-yellow-100 text-yellow-700"
-                            }`}
-                          >
-                            {employee.status}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+      <Panel title="Current Pay Period" aside="Mar 1-15, 2024" padded={false}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Employee</TableHead>
+              <TableHead>Position</TableHead>
+              <TableHead numeric>Hourly Rate</TableHead>
+              <TableHead numeric>Hours</TableHead>
+              <TableHead numeric>Overtime</TableHead>
+              <TableHead numeric>Deductions</TableHead>
+              <TableHead numeric>Net Pay</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {mockPayrollData.map((employee) => (
+              <TableRow key={employee.id}>
+                <TableCell className="whitespace-nowrap font-medium">{employee.employeeName}</TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{employee.position}</TableCell>
+                <TableCell numeric>{formatINR(employee.hourlyRate, { paise: true })}</TableCell>
+                <TableCell numeric>{employee.hoursWorked}</TableCell>
+                <TableCell numeric>{employee.overtime}</TableCell>
+                <TableCell numeric>{formatINR(employee.deductions, { paise: true })}</TableCell>
+                <TableCell numeric className="font-medium">
+                  {formatINR(employee.netPay, { paise: true })}
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={employee.status} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={5}>Total</TableCell>
+              <TableCell numeric>{formatINR(totalDeductions, { paise: true })}</TableCell>
+              <TableCell numeric>{formatINR(totalPayroll, { paise: true })}</TableCell>
+              <TableCell />
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </Panel>
+    </>
   );
 };
 

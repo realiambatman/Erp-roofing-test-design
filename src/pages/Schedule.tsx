@@ -1,15 +1,14 @@
-
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar as CalendarIcon, Clock, Users, MapPin } from "lucide-react";
+import { CalendarDays, CalendarPlus, Clock, MapPin, Users } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState, Panel } from "@/components/layout/Panel";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDate } from "@/lib/format";
 
 // Mock data for schedules
 const scheduleData = [
@@ -48,139 +47,157 @@ const scheduleData = [
   }
 ];
 
+type Appointment = (typeof scheduleData)[number];
+
+const scheduledDays = scheduleData.map((schedule) => new Date(`${schedule.date}T00:00:00`));
+
+function AppointmentCard({ schedule }: { schedule: Appointment }) {
+  return (
+    <li className="px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h4 className="font-medium">{schedule.title}</h4>
+          <p className="text-muted-foreground">{schedule.client}</p>
+        </div>
+        <StatusBadge status={schedule.status} />
+      </div>
+      <dl className="mt-2 space-y-1 text-muted-foreground [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0">
+        <div className="flex items-center gap-2">
+          <Clock aria-hidden />
+          <dt className="sr-only">Time</dt>
+          <dd className="num">
+            {schedule.startTime} - {schedule.endTime}
+          </dd>
+        </div>
+        <div className="flex items-center gap-2">
+          <MapPin aria-hidden />
+          <dt className="sr-only">Address</dt>
+          <dd>{schedule.address}</dd>
+        </div>
+        <div className="flex items-start gap-2">
+          <Users aria-hidden className="mt-[3px]" />
+          <dt className="sr-only">Crew</dt>
+          <dd>{schedule.crew.join(", ")}</dd>
+        </div>
+      </dl>
+    </li>
+  );
+}
+
 const Schedule = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [view, setView] = useState("calendar");
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "urgent":
-        return "bg-red-500";
-      case "scheduled":
-        return "bg-blue-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
 
   const filteredSchedules = scheduleData.filter(
     (schedule) => schedule.date === format(date || new Date(), "yyyy-MM-dd")
   );
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold">Schedule</h1>
-                <p className="text-muted-foreground mt-2">Manage your team's schedule and appointments.</p>
+    <>
+      <PageHeader
+        title="Schedule"
+        description="Manage your team's schedule and appointments."
+        actions={
+          <Button>
+            <CalendarPlus />
+            New Appointment
+          </Button>
+        }
+      />
+
+      <Tabs value={view} onValueChange={setView} className="w-full">
+        <TabsList>
+          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+          <TabsTrigger value="list">List View</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="calendar">
+          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[auto_minmax(0,1fr)]">
+            <Panel padded={false}>
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                modifiers={{ booked: scheduledDays }}
+                modifiersClassNames={{
+                  booked:
+                    "relative after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-warning",
+                }}
+                className="mx-auto w-fit"
+              />
+              <div className="flex items-center justify-between gap-3 border-t px-4 py-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
+                  Has appointments
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDate(scheduledDays[0])}
+                >
+                  <CalendarDays />
+                  Go to {formatDate(scheduleData[0].date)}
+                </Button>
               </div>
-              <Button>
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                New Appointment
-              </Button>
-            </div>
+            </Panel>
 
-            <Tabs value={view} onValueChange={setView} className="w-full">
-              <TabsList>
-                <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-                <TabsTrigger value="list">List View</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="calendar" className="mt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="p-4">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      className="rounded-md border"
-                    />
-                  </Card>
-
-                  <Card className="p-4">
-                    <h3 className="font-semibold mb-4">
-                      Appointments for {date ? format(date, "MMMM d, yyyy") : "Selected Date"}
-                    </h3>
-                    <ScrollArea className="h-[400px]">
-                      <div className="space-y-4">
-                        {filteredSchedules.map((schedule) => (
-                          <Card key={schedule.id} className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="font-medium">{schedule.title}</h4>
-                              <Badge className={getStatusColor(schedule.status)}>
-                                {schedule.status}
-                              </Badge>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                <span>{schedule.startTime} - {schedule.endTime}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4" />
-                                <span>{schedule.address}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                <span>{schedule.crew.join(", ")}</span>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="list" className="mt-4">
-                <Card className="p-4">
-                  <ScrollArea className="h-[600px]">
-                    <div className="space-y-4">
-                      {scheduleData.map((schedule) => (
-                        <Card key={schedule.id} className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h4 className="font-medium">{schedule.title}</h4>
-                              <p className="text-sm text-muted-foreground">{schedule.client}</p>
-                            </div>
-                            <Badge className={getStatusColor(schedule.status)}>
-                              {schedule.status}
-                            </Badge>
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2">
-                              <CalendarIcon className="h-4 w-4" />
-                              <span>{schedule.date}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              <span>{schedule.startTime} - {schedule.endTime}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4" />
-                              <span>{schedule.address}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4" />
-                              <span>{schedule.crew.join(", ")}</span>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </Card>
-              </TabsContent>
-            </Tabs>
+            <Panel
+              title={`Appointments for ${date ? format(date, "MMMM d, yyyy") : "Selected Date"}`}
+              aside={`${filteredSchedules.length} booked`}
+              padded={false}
+            >
+              {filteredSchedules.length === 0 ? (
+                <EmptyState
+                  title="Nothing scheduled for this day"
+                  hint="Pick a day marked with a dot, or switch to the list view to see every appointment."
+                />
+              ) : (
+                <ul className="divide-y">
+                  {filteredSchedules.map((schedule) => (
+                    <AppointmentCard key={schedule.id} schedule={schedule} />
+                  ))}
+                </ul>
+              )}
+            </Panel>
           </div>
-        </main>
-      </div>
-    </SidebarProvider>
+        </TabsContent>
+
+        <TabsContent value="list">
+          <Panel title="All appointments" aside={`${scheduleData.length} booked`} padded={false}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Job</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Crew</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {scheduleData.map((schedule) => (
+                  <TableRow key={schedule.id}>
+                    <TableCell className="whitespace-nowrap font-medium">{schedule.title}</TableCell>
+                    <TableCell className="whitespace-nowrap">{schedule.client}</TableCell>
+                    <TableCell className="num">{formatDate(schedule.date)}</TableCell>
+                    <TableCell className="num">
+                      {schedule.startTime} - {schedule.endTime}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{schedule.address}</TableCell>
+                    <TableCell className="min-w-[14rem] text-muted-foreground">{schedule.crew.join(", ")}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={schedule.status} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Panel>
+        </TabsContent>
+      </Tabs>
+    </>
   );
 };
 

@@ -1,29 +1,14 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Search, 
-  Plus, 
-  MoreHorizontal,
-  Wrench,
-  AlertTriangle,
-  Calendar,
-  Truck,
-  History,
-  FileText,
-  Settings,
-  CheckCircle2
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { FileText, History, MoreHorizontal, Plus, Truck, Wrench } from "lucide-react";
 import { useState } from "react";
-import { Progress } from "@/components/ui/progress";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState, Field, Meter, Panel, SearchInput } from "@/components/layout/Panel";
+import { StatStrip } from "@/components/layout/StatStrip";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -34,6 +19,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDate, formatINR } from "@/lib/format";
 
 // Mock equipment data
 const equipmentData = [
@@ -105,62 +92,61 @@ const equipmentData = [
 
 type Equipment = typeof equipmentData[0];
 
+const conditionTone = (condition: number) => (condition >= 75 ? "default" : condition >= 50 ? "attention" : "critical");
+
 const EquipmentDetails = ({ equipment }: { equipment: Equipment }) => {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h3 className="font-medium">Equipment Details</h3>
-          <div className="mt-2 space-y-1">
-            <p><span className="font-medium">Model:</span> {equipment.model}</p>
-            <p><span className="font-medium">Type:</span> {equipment.type}</p>
-            <p><span className="font-medium">Location:</span> {equipment.location}</p>
-            <p><span className="font-medium">Assigned To:</span> {equipment.assignedTo}</p>
-          </div>
-        </div>
-        <div>
-          <h3 className="font-medium">Dates</h3>
-          <div className="mt-2 space-y-1">
-            <p><span className="font-medium">Purchase Date:</span> {equipment.purchaseDate}</p>
-            <p><span className="font-medium">Warranty Until:</span> {equipment.warranty}</p>
-            <p><span className="font-medium">Last Maintenance:</span> {equipment.lastMaintenance}</p>
-            <p><span className="font-medium">Next Maintenance:</span> {equipment.nextMaintenance}</p>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Field label="Model">{equipment.model}</Field>
+        <Field label="Type">{equipment.type}</Field>
+        <Field label="Location">{equipment.location}</Field>
+        <Field label="Assigned To">{equipment.assignedTo}</Field>
+        <Field label="Purchase Date">
+          <span className="num">{formatDate(equipment.purchaseDate)}</span>
+        </Field>
+        <Field label="Warranty Until">
+          <span className="num">{formatDate(equipment.warranty)}</span>
+        </Field>
+        <Field label="Last Maintenance">
+          <span className="num">{formatDate(equipment.lastMaintenance)}</span>
+        </Field>
+        <Field label="Next Maintenance">
+          <span className="num">{formatDate(equipment.nextMaintenance)}</span>
+        </Field>
+      </dl>
 
       <div>
-        <h3 className="font-medium mb-2">Specifications</h3>
-        <Card className="p-4">
+        <h3 className="field-label mb-1">Specifications</h3>
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border sm:grid-cols-4">
           {Object.entries(equipment.specifications).map(([key, value]) => (
-            <div key={key} className="flex justify-between py-1">
-              <span className="font-medium capitalize">{key.replace('_', ' ')}:</span>
-              <span>{value}</span>
+            <div key={key} className="bg-card px-3 py-2">
+              <dt className="field-label capitalize">{key.replace(/([a-z])([A-Z])/g, "$1 $2").replace("_", " ")}</dt>
+              <dd className="num font-medium">{value}</dd>
             </div>
           ))}
-        </Card>
+        </dl>
       </div>
 
-      <div>
-        <h3 className="font-medium mb-2">Maintenance History</h3>
-        <Table>
+      <div className="overflow-hidden rounded-md border">
+        <Table containerClassName="max-h-none">
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
+              <TableHead>Maintenance History</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Technician</TableHead>
-              <TableHead>Cost</TableHead>
+              <TableHead numeric>Cost</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {equipment.maintenanceHistory.map((record, index) => (
-              <TableRow key={index}>
-                <TableCell>{record.date}</TableCell>
+            {equipment.maintenanceHistory.map((record) => (
+              <TableRow key={`${record.date}-${record.type}`}>
+                <TableCell className="num">{formatDate(record.date)}</TableCell>
                 <TableCell>{record.type}</TableCell>
-                <TableCell>{record.description}</TableCell>
-                <TableCell>{record.technician}</TableCell>
-                <TableCell>₹{record.cost.toFixed(2)}</TableCell>
+                <TableCell className="min-w-[12rem]">{record.description}</TableCell>
+                <TableCell className="whitespace-nowrap">{record.technician}</TableCell>
+                <TableCell numeric>{formatINR(record.cost, { paise: true })}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -173,168 +159,135 @@ const EquipmentDetails = ({ equipment }: { equipment: Equipment }) => {
 const Equipment = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredEquipment = equipmentData.filter(equipment =>
-    equipment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    equipment.id.toLowerCase().includes(searchQuery.toLowerCase())
+  const query = searchQuery.trim().toLowerCase();
+  const filteredEquipment = equipmentData.filter(
+    (equipment) => equipment.name.toLowerCase().includes(query) || equipment.id.toLowerCase().includes(query)
   );
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'operational':
-        return <Badge className="bg-green-500">Operational</Badge>;
-      case 'maintenance_required':
-        return <Badge className="bg-yellow-500">Maintenance Required</Badge>;
-      case 'out_of_service':
-        return <Badge className="bg-red-500">Out of Service</Badge>;
-      default:
-        return <Badge className="bg-gray-500">Unknown</Badge>;
-    }
-  };
-
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold">Equipment Management</h1>
-                <p className="text-muted-foreground mt-2">Track and maintain company equipment</p>
-              </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Equipment
-              </Button>
-            </div>
+    <>
+      <PageHeader
+        title="Equipment Management"
+        description="Track and maintain company equipment"
+        actions={
+          <Button>
+            <Plus />
+            Add Equipment
+          </Button>
+        }
+      />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Total Equipment</p>
-                    <p className="text-2xl font-bold">24</p>
-                  </div>
-                  <Wrench className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Maintenance Due</p>
-                    <p className="text-2xl font-bold">3</p>
-                  </div>
-                  <AlertTriangle className="h-8 w-8 text-yellow-500" />
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Out of Service</p>
-                    <p className="text-2xl font-bold">1</p>
-                  </div>
-                  <Settings className="h-8 w-8 text-red-500" />
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Utilization Rate</p>
-                    <p className="text-2xl font-bold">78%</p>
-                  </div>
-                  <CheckCircle2 className="h-8 w-8 text-green-500" />
-                </div>
-              </Card>
-            </div>
+      <StatStrip
+        stats={[
+          { label: "Total Equipment", value: "24", hint: "Across all sites" },
+          { label: "Maintenance Due", value: "3", hint: "Service overdue or due soon", tone: "attention" },
+          { label: "Out of Service", value: "1", hint: "Unavailable for jobs" },
+          { label: "Utilization Rate", value: "78%", hint: "Fleet in use" },
+        ]}
+      />
 
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search equipment..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-
-              <ScrollArea className="h-[500px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Model</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Condition</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Next Maintenance</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredEquipment.map((equipment) => (
-                      <TableRow key={equipment.id}>
-                        <TableCell className="font-medium">{equipment.id}</TableCell>
-                        <TableCell>{equipment.name}</TableCell>
-                        <TableCell>{equipment.model}</TableCell>
-                        <TableCell>{getStatusBadge(equipment.status)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Progress value={equipment.condition} className="w-[60px]" />
-                            <span className="text-sm">{equipment.condition}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{equipment.location}</TableCell>
-                        <TableCell>{equipment.nextMaintenance}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[700px]">
-                                  <DialogHeader>
-                                    <DialogTitle>Equipment Details</DialogTitle>
-                                  </DialogHeader>
-                                  <EquipmentDetails equipment={equipment} />
-                                </DialogContent>
-                              </Dialog>
-                              <DropdownMenuItem>
-                                <Wrench className="mr-2 h-4 w-4" />
-                                Schedule Maintenance
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Truck className="mr-2 h-4 w-4" />
-                                Update Location
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <History className="mr-2 h-4 w-4" />
-                                View History
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+      <Panel
+        padded={false}
+        toolbar={
+          <>
+            <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search equipment..." />
+            <span className="num ml-auto text-xs text-muted-foreground">
+              {filteredEquipment.length} of {equipmentData.length}
+            </span>
+          </>
+        }
+      >
+        {filteredEquipment.length === 0 ? (
+          <EmptyState title="No equipment matches this search" hint="Try an equipment name or ID." />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Condition</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Assigned To</TableHead>
+                <TableHead numeric>Next Maintenance</TableHead>
+                <TableHead className="w-10">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredEquipment.map((equipment) => (
+                <TableRow key={equipment.id}>
+                  <TableCell className="num font-medium">{equipment.id}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <div className="font-medium">{equipment.name}</div>
+                    <div className="text-xs text-muted-foreground">{equipment.model}</div>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={equipment.status} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Meter
+                        value={equipment.condition}
+                        tone={conditionTone(equipment.condition)}
+                        label={`${equipment.name} condition`}
+                        className="w-16"
+                      />
+                      <span className="num w-8 text-right text-xs">{equipment.condition}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{equipment.location}</TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">{equipment.assignedTo}</TableCell>
+                  <TableCell numeric>{formatDate(equipment.nextMaintenance)}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Actions for ${equipment.name}`}>
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[700px]">
+                            <DialogHeader>
+                              <DialogTitle>Equipment Details</DialogTitle>
+                              <DialogDescription>
+                                {equipment.id}, {equipment.name}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <EquipmentDetails equipment={equipment} />
+                          </DialogContent>
+                        </Dialog>
+                        <DropdownMenuItem>
+                          <Wrench className="mr-2 h-4 w-4" />
+                          Schedule Maintenance
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Truck className="mr-2 h-4 w-4" />
+                          Update Location
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <History className="mr-2 h-4 w-4" />
+                          View History
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Panel>
+    </>
   );
 };
 
-export default Equipment; 
+export default Equipment;

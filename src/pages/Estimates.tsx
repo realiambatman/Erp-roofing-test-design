@@ -1,21 +1,19 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Plus, MoreHorizontal, FileText, Mail, Calculator, Edit, Trash2, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Edit, Eye, FileText, Mail, MoreHorizontal, Plus } from "lucide-react";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState, Field, Panel, SearchInput } from "@/components/layout/Panel";
+import { StatStrip } from "@/components/layout/StatStrip";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/components/ui/use-toast";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDate, formatINR } from "@/lib/format";
 
 // Mock estimates data
 const estimatesData = [
@@ -64,196 +62,221 @@ const estimatesData = [
 type Estimate = typeof estimatesData[0];
 
 const EstimateDetails = ({ estimate }: { estimate: Estimate }) => {
-  const materialsCost = estimate.materials.reduce((sum, item) => 
-    sum + (item.quantity * item.unitPrice), 0
-  );
+  const materialsCost = estimate.materials.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const laborCost = estimate.labor.hours * estimate.labor.rate;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h3 className="font-medium">Customer</h3>
-          <p>{estimate.customerName}</p>
-        </div>
-        <div>
-          <h3 className="font-medium">Estimate Number</h3>
-          <p>{estimate.number}</p>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Field label="Customer">{estimate.customerName}</Field>
+        <Field label="Estimate Number">
+          <span className="num">{estimate.number}</span>
+        </Field>
+        <Field label="Issued">
+          <span className="num">{formatDate(estimate.date)}</span>
+        </Field>
+        <Field label="Valid until">
+          <span className="num">{formatDate(estimate.expiryDate)}</span>
+        </Field>
+      </dl>
 
-      <div>
-        <h3 className="font-medium mb-2">Materials</h3>
-        <Table>
+      <div className="overflow-hidden rounded-md border">
+        <Table containerClassName="max-h-none">
           <TableHeader>
             <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Unit Price</TableHead>
-              <TableHead>Total</TableHead>
+              <TableHead>Materials</TableHead>
+              <TableHead numeric>Quantity</TableHead>
+              <TableHead numeric>Unit Price</TableHead>
+              <TableHead numeric>Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {estimate.materials.map((material, index) => (
-              <TableRow key={index}>
+            {estimate.materials.map((material) => (
+              <TableRow key={material.item}>
                 <TableCell>{material.item}</TableCell>
-                <TableCell>{material.quantity}</TableCell>
-                <TableCell>₹{material.unitPrice.toFixed(2)}</TableCell>
-                <TableCell>₹{(material.quantity * material.unitPrice).toFixed(2)}</TableCell>
+                <TableCell numeric>{material.quantity}</TableCell>
+                <TableCell numeric>{formatINR(material.unitPrice, { paise: true })}</TableCell>
+                <TableCell numeric>{formatINR(material.quantity * material.unitPrice, { paise: true })}</TableCell>
               </TableRow>
             ))}
+            <TableRow>
+              <TableCell>
+                Labor
+                <span className="num block text-xs text-muted-foreground sm:ml-2 sm:inline">
+                  {estimate.labor.hours} hours @ {formatINR(estimate.labor.rate, { paise: true })}/hr
+                </span>
+              </TableCell>
+              <TableCell numeric>{estimate.labor.hours}</TableCell>
+              <TableCell numeric>{formatINR(estimate.labor.rate, { paise: true })}</TableCell>
+              <TableCell numeric>{formatINR(laborCost, { paise: true })}</TableCell>
+            </TableRow>
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={3} className="font-normal text-muted-foreground">
+                Materials
+              </TableCell>
+              <TableCell numeric className="font-normal">
+                {formatINR(materialsCost, { paise: true })}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell colSpan={3} className="!border-t-0 font-normal text-muted-foreground">
+                Labor
+              </TableCell>
+              <TableCell numeric className="!border-t-0 font-normal">
+                {formatINR(laborCost, { paise: true })}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell colSpan={3}>Total</TableCell>
+              <TableCell numeric className="font-semibold">
+                {formatINR(estimate.amount, { paise: true })}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
         </Table>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h3 className="font-medium">Labor</h3>
-          <p>{estimate.labor.hours} hours @ ₹{estimate.labor.rate}/hr</p>
-          <p className="font-medium mt-1">Total: ₹{laborCost.toFixed(2)}</p>
-        </div>
-        <div>
-          <h3 className="font-medium">Summary</h3>
-          <div className="space-y-1">
-            <p>Materials: ₹{materialsCost.toFixed(2)}</p>
-            <p>Labor: ₹{laborCost.toFixed(2)}</p>
-            <p className="font-medium">Total: ₹{estimate.amount.toFixed(2)}</p>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="font-medium">Notes</h3>
-        <p className="text-sm text-muted-foreground">{estimate.notes}</p>
-      </div>
+      <dl>
+        <Field label="Notes">{estimate.notes}</Field>
+      </dl>
     </div>
   );
 };
 
 const Estimates = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
 
-  const filteredEstimates = estimatesData.filter(estimate =>
-    estimate.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    estimate.number.toLowerCase().includes(searchQuery.toLowerCase())
+  const query = searchQuery.trim().toLowerCase();
+  const filteredEstimates = estimatesData.filter(
+    (estimate) =>
+      estimate.customerName.toLowerCase().includes(query) || estimate.number.toLowerCase().includes(query)
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "accepted":
-        return "bg-green-500";
-      case "rejected":
-        return "bg-red-500";
-      case "expired":
-        return "bg-gray-500";
-      default:
-        return "bg-yellow-500";
-    }
-  };
+  const totalValue = estimatesData.reduce((sum, estimate) => sum + estimate.amount, 0);
+  const pending = estimatesData.filter((estimate) => estimate.status === "pending");
+  const accepted = estimatesData.filter((estimate) => estimate.status === "accepted");
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold">Estimates & Quotes</h1>
-                <p className="text-muted-foreground mt-2">Create and manage customer estimates</p>
-              </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Estimate
-              </Button>
-            </div>
+    <>
+      <PageHeader
+        title="Estimates & Quotes"
+        description="Create and manage customer estimates"
+        actions={
+          <Button>
+            <Plus />
+            New Estimate
+          </Button>
+        }
+      />
 
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search estimates..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
+      <StatStrip
+        stats={[
+          { label: "Quoted value", value: formatINR(totalValue), hint: `${estimatesData.length} estimates` },
+          {
+            label: "Awaiting reply",
+            value: formatINR(pending.reduce((sum, estimate) => sum + estimate.amount, 0)),
+            hint: `${pending.length} pending`,
+            tone: pending.length > 0 ? "attention" : "default",
+          },
+          {
+            label: "Accepted",
+            value: formatINR(accepted.reduce((sum, estimate) => sum + estimate.amount, 0)),
+            hint: `${accepted.length} accepted`,
+          },
+        ]}
+      />
 
-              <ScrollArea className="h-[600px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Number</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredEstimates.map((estimate) => (
-                      <TableRow key={estimate.id}>
-                        <TableCell className="font-medium">{estimate.number}</TableCell>
-                        <TableCell>{estimate.customerName}</TableCell>
-                        <TableCell>{estimate.projectTitle}</TableCell>
-                        <TableCell>{new Date(estimate.date).toLocaleDateString()}</TableCell>
-                        <TableCell>₹{estimate.amount.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(estimate.status)}>
-                            {estimate.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[700px]">
-                                  <DialogHeader>
-                                    <DialogTitle>Estimate Details</DialogTitle>
-                                  </DialogHeader>
-                                  <EstimateDetails estimate={estimate} />
-                                </DialogContent>
-                              </Dialog>
-                              <DropdownMenuItem>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Mail className="mr-2 h-4 w-4" />
-                                Send to Customer
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <FileText className="mr-2 h-4 w-4" />
-                                Generate PDF
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+      <Panel
+        padded={false}
+        toolbar={
+          <>
+            <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search estimates..." />
+            <span className="num ml-auto text-xs text-muted-foreground">
+              {filteredEstimates.length} of {estimatesData.length}
+            </span>
+          </>
+        }
+      >
+        {filteredEstimates.length === 0 ? (
+          <EmptyState title="No estimates match this search" hint="Try a customer name or an estimate number." />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Number</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Project</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Valid until</TableHead>
+                <TableHead numeric>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-10">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredEstimates.map((estimate) => (
+                <TableRow key={estimate.id}>
+                  <TableCell className="num font-medium">{estimate.number}</TableCell>
+                  <TableCell className="whitespace-nowrap">{estimate.customerName}</TableCell>
+                  <TableCell className="whitespace-nowrap">{estimate.projectTitle}</TableCell>
+                  <TableCell className="num">{formatDate(estimate.date)}</TableCell>
+                  <TableCell className="num text-muted-foreground">{formatDate(estimate.expiryDate)}</TableCell>
+                  <TableCell numeric className="font-medium">
+                    {formatINR(estimate.amount, { paise: true })}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={estimate.status} />
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Actions for ${estimate.number}`}>
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[700px]">
+                            <DialogHeader>
+                              <DialogTitle>Estimate Details</DialogTitle>
+                              <DialogDescription>{estimate.projectTitle}</DialogDescription>
+                            </DialogHeader>
+                            <EstimateDetails estimate={estimate} />
+                          </DialogContent>
+                        </Dialog>
+                        <DropdownMenuItem>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send to Customer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Generate PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Panel>
+    </>
   );
 };
 
-export default Estimates; 
+export default Estimates;

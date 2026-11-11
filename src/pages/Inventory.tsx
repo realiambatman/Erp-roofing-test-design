@@ -1,6 +1,9 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState, Panel, SearchInput } from "@/components/layout/Panel";
+import { StatStrip } from "@/components/layout/StatStrip";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,8 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Package, AlertTriangle, IndianRupee, ArrowDownUp, Boxes, Info } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatDate, formatINR, formatNumber } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const mockInventoryData = [
   {
@@ -105,7 +108,21 @@ const mockInventoryData = [
   }
 ];
 
+type StockFilter = "all" | "reorder";
+
+const needsReorder = (status: string) => status === "Low Stock" || status === "Critical";
+
 const Inventory = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+
+  const query = searchQuery.trim().toLowerCase();
+  const visibleItems = mockInventoryData.filter(
+    (item) =>
+      (stockFilter === "all" || needsReorder(item.status)) &&
+      [item.item, item.brand, item.category, item.location].some((field) => field.toLowerCase().includes(query))
+  );
+
   // Calculate total inventory value
   const totalValue = mockInventoryData.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
@@ -127,142 +144,114 @@ const Inventory = () => {
   );
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-semibold">Inventory Management</h1>
-              <p className="text-muted-foreground mt-2">Track and manage your roofing materials inventory.</p>
+    <>
+      <PageHeader
+        title="Inventory Management"
+        description="Track and manage your roofing materials inventory."
+      />
+
+      <StatStrip
+        stats={[
+          { label: "Total Items", value: totalItems, hint: "Distinct stock lines" },
+          {
+            label: "Low Stock Items",
+            value: lowStockCount,
+            hint: "At or below reorder point",
+            tone: lowStockCount > 0 ? "attention" : "default",
+          },
+          { label: "Total Value", value: formatINR(totalValue), hint: "Quantity x unit price" },
+          { label: "Total Quantity", value: formatNumber(totalQuantity), hint: "All units on hand" },
+        ]}
+      />
+
+      <Panel
+        title="Inventory List"
+        aside={
+          <span className="num">
+            {visibleItems.length} of {totalItems}
+          </span>
+        }
+        padded={false}
+        toolbar={
+          <>
+            <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search inventory..." />
+            <div role="group" aria-label="Stock filter" className="flex rounded-md border p-0.5">
+              {(
+                [
+                  ["all", "All stock"],
+                  ["reorder", "Needs reorder"],
+                ] as const
+              ).map(([value, label]) => (
+                <Button
+                  key={value}
+                  variant="ghost"
+                  size="sm"
+                  aria-pressed={stockFilter === value}
+                  onClick={() => setStockFilter(value)}
+                  className={cn(
+                    "h-6 rounded-[4px] text-muted-foreground",
+                    stockFilter === value && "bg-secondary text-foreground hover:bg-secondary"
+                  )}
+                >
+                  {label}
+                </Button>
+              ))}
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="p-6 glass-card animate-in">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <Package className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Total Items</h3>
-                    <p className="text-2xl font-bold">{totalItems}</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 glass-card animate-in">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-red-100 rounded-lg">
-                    <AlertTriangle className="h-6 w-6 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Low Stock Items</h3>
-                    <p className="text-2xl font-bold">{lowStockCount}</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 glass-card animate-in">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <IndianRupee className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Total Value</h3>
-                    <p className="text-2xl font-bold">₹{totalValue.toLocaleString('en-IN')}</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 glass-card animate-in">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <Boxes className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Total Quantity</h3>
-                    <p className="text-2xl font-bold">{totalQuantity}</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            <Card className="p-6 glass-card animate-in">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Inventory List</h2>
-                <div className="flex items-center gap-2">
-                  <ArrowDownUp className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Sort</span>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item</TableHead>
-                      <TableHead>Brand</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead>Unit Price</TableHead>
-                      <TableHead>Total Value</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Specifications</TableHead>
-                      <TableHead>Last Updated</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockInventoryData.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.item}</TableCell>
-                        <TableCell>{item.brand}</TableCell>
-                        <TableCell>{item.category}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{item.unit}</TableCell>
-                        <TableCell>₹{item.unitPrice.toLocaleString('en-IN')}</TableCell>
-                        <TableCell>₹{(item.quantity * item.unitPrice).toLocaleString('en-IN')}</TableCell>
-                        <TableCell>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              item.status === "In Stock"
-                                ? "bg-green-100 text-green-700"
-                                : item.status === "Low Stock"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {item.status}
-                          </span>
-                        </TableCell>
-                        <TableCell>{item.location}</TableCell>
-                        <TableCell>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="text-sm">
-                                  {item.specifications}
-                                  <br />
-                                  Warranty: {item.warranty}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
-                        <TableCell>{item.lastUpdated}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+          </>
+        }
+      >
+        {visibleItems.length === 0 ? (
+          <EmptyState title="No stock lines match these filters" hint="Clear the search or switch back to all stock." />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead numeric>Quantity</TableHead>
+                <TableHead numeric>Reorder at</TableHead>
+                <TableHead numeric>Unit Price</TableHead>
+                <TableHead numeric>Total Value</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Specifications</TableHead>
+                <TableHead numeric>Last Updated</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visibleItems.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="whitespace-nowrap">
+                    <div className="font-medium">{item.item}</div>
+                    <div className="text-xs text-muted-foreground">{item.brand}</div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{item.category}</TableCell>
+                  <TableCell numeric>
+                    {formatNumber(item.quantity)} <span className="text-xs text-muted-foreground">{item.unit}</span>
+                  </TableCell>
+                  <TableCell numeric className="text-muted-foreground">
+                    {formatNumber(item.reorderPoint)}
+                  </TableCell>
+                  <TableCell numeric>{formatINR(item.unitPrice, { paise: true })}</TableCell>
+                  <TableCell numeric className="font-medium">
+                    {formatINR(item.quantity * item.unitPrice)}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={item.status} />
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{item.location}</TableCell>
+                  <TableCell className="min-w-[13rem]">
+                    <div>{item.specifications}</div>
+                    <div className="text-xs text-muted-foreground">Warranty: {item.warranty}</div>
+                  </TableCell>
+                  <TableCell numeric>{formatDate(item.lastUpdated)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Panel>
+    </>
   );
 };
 

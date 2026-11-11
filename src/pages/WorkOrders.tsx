@@ -1,29 +1,19 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Search, 
-  Plus, 
-  MoreHorizontal, 
-  ClipboardCheck, 
-  Timer,
-  Users,
-  Wrench,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ClipboardCheck, MoreHorizontal, Plus, Timer, Users, Wrench } from "lucide-react";
 import { useState } from "react";
-import { Progress } from "@/components/ui/progress";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState, Field, Meter, Panel, SearchInput } from "@/components/layout/Panel";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDate } from "@/lib/format";
 
 // Mock work orders data
 const workOrdersData = [
@@ -82,25 +72,26 @@ type WorkOrder = typeof workOrdersData[0];
 
 const WorkOrderDetails = ({ workOrder }: { workOrder: WorkOrder }) => {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h3 className="font-medium">Customer</h3>
-          <p>{workOrder.customerName}</p>
-        </div>
-        <div>
-          <h3 className="font-medium">Work Order ID</h3>
-          <p>{workOrder.id}</p>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Field label="Customer">{workOrder.customerName}</Field>
+        <Field label="Work Order ID">
+          <span className="num">{workOrder.id}</span>
+        </Field>
+        <Field label="Start">
+          <span className="num">{formatDate(workOrder.startDate)}</span>
+        </Field>
+        <Field label="Due">
+          <span className="num">{formatDate(workOrder.dueDate)}</span>
+        </Field>
+      </dl>
 
-      <div>
-        <h3 className="font-medium mb-2">Tasks</h3>
-        <Table>
+      <div className="overflow-hidden rounded-md border">
+        <Table containerClassName="max-h-none">
           <TableHeader>
             <TableRow>
-              <TableHead>Task</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Tasks</TableHead>
+              <TableHead className="w-32">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -108,9 +99,7 @@ const WorkOrderDetails = ({ workOrder }: { workOrder: WorkOrder }) => {
               <TableRow key={task.id}>
                 <TableCell>{task.description}</TableCell>
                 <TableCell>
-                  <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
-                    {task.status}
-                  </Badge>
+                  <StatusBadge status={task.status} tone={task.status === "pending" ? "neutral" : undefined} />
                 </TableCell>
               </TableRow>
             ))}
@@ -118,43 +107,43 @@ const WorkOrderDetails = ({ workOrder }: { workOrder: WorkOrder }) => {
         </Table>
       </div>
 
-      <div>
-        <h3 className="font-medium mb-2">Materials Usage</h3>
-        <Table>
+      <div className="overflow-hidden rounded-md border">
+        <Table containerClassName="max-h-none">
           <TableHeader>
             <TableRow>
-              <TableHead>Material</TableHead>
-              <TableHead>Allocated</TableHead>
-              <TableHead>Used</TableHead>
-              <TableHead>Remaining</TableHead>
+              <TableHead>Materials Usage</TableHead>
+              <TableHead numeric>Allocated</TableHead>
+              <TableHead numeric>Used</TableHead>
+              <TableHead numeric>Remaining</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {workOrder.materials.map((material, index) => (
-              <TableRow key={index}>
+            {workOrder.materials.map((material) => (
+              <TableRow key={material.item}>
                 <TableCell>{material.item}</TableCell>
-                <TableCell>{material.allocated}</TableCell>
-                <TableCell>{material.used}</TableCell>
-                <TableCell>{material.allocated - material.used}</TableCell>
+                <TableCell numeric>{material.allocated}</TableCell>
+                <TableCell numeric>{material.used}</TableCell>
+                <TableCell numeric className="font-medium">
+                  {material.allocated - material.used}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
 
-      <div>
-        <h3 className="font-medium">Assigned Team Members</h3>
-        <div className="flex gap-2 mt-2">
-          {workOrder.assignedTo.map((member, index) => (
-            <Badge key={index} variant="secondary">{member}</Badge>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="font-medium">Notes</h3>
-        <p className="text-sm text-muted-foreground">{workOrder.notes}</p>
-      </div>
+      <dl className="space-y-4">
+        <Field label="Assigned Team Members">
+          <span className="mt-1 flex flex-wrap gap-1.5">
+            {workOrder.assignedTo.map((member) => (
+              <Badge key={member} variant="neutral">
+                {member}
+              </Badge>
+            ))}
+          </span>
+        </Field>
+        <Field label="Notes">{workOrder.notes}</Field>
+      </dl>
     </div>
   );
 };
@@ -162,143 +151,119 @@ const WorkOrderDetails = ({ workOrder }: { workOrder: WorkOrder }) => {
 const WorkOrders = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredWorkOrders = workOrdersData.filter(order =>
-    order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.id.toLowerCase().includes(searchQuery.toLowerCase())
+  const query = searchQuery.trim().toLowerCase();
+  const filteredWorkOrders = workOrdersData.filter(
+    (order) => order.customerName.toLowerCase().includes(query) || order.id.toLowerCase().includes(query)
   );
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-500">Completed</Badge>;
-      case 'in_progress':
-        return <Badge className="bg-blue-500">In Progress</Badge>;
-      case 'scheduled':
-        return <Badge className="bg-yellow-500">Scheduled</Badge>;
-      case 'on_hold':
-        return <Badge className="bg-orange-500">On Hold</Badge>;
-      default:
-        return <Badge className="bg-gray-500">Unknown</Badge>;
-    }
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return <Badge className="bg-red-500">High</Badge>;
-      case 'medium':
-        return <Badge className="bg-yellow-500">Medium</Badge>;
-      case 'low':
-        return <Badge className="bg-green-500">Low</Badge>;
-      default:
-        return <Badge>Normal</Badge>;
-    }
-  };
-
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold">Work Orders</h1>
-                <p className="text-muted-foreground mt-2">Manage and track work orders</p>
-              </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Work Order
-              </Button>
-            </div>
+    <>
+      <PageHeader
+        title="Work Orders"
+        description="Manage and track work orders"
+        actions={
+          <Button>
+            <Plus />
+            Create Work Order
+          </Button>
+        }
+      />
 
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search work orders..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-
-              <ScrollArea className="h-[600px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Progress</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredWorkOrders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.id}</TableCell>
-                        <TableCell>{order.customerName}</TableCell>
-                        <TableCell>{order.title}</TableCell>
-                        <TableCell>{getStatusBadge(order.status)}</TableCell>
-                        <TableCell>{getPriorityBadge(order.priority)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Progress value={order.progress} className="w-[60px]" />
-                            <span className="text-sm">{order.progress}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{new Date(order.dueDate).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <ClipboardCheck className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[700px]">
-                                  <DialogHeader>
-                                    <DialogTitle>Work Order Details</DialogTitle>
-                                  </DialogHeader>
-                                  <WorkOrderDetails workOrder={order} />
-                                </DialogContent>
-                              </Dialog>
-                              <DropdownMenuItem>
-                                <Timer className="mr-2 h-4 w-4" />
-                                Update Progress
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Users className="mr-2 h-4 w-4" />
-                                Assign Team
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Wrench className="mr-2 h-4 w-4" />
-                                Update Materials
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+      <Panel
+        padded={false}
+        toolbar={
+          <>
+            <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search work orders..." />
+            <span className="num ml-auto text-xs text-muted-foreground">
+              {filteredWorkOrders.length} of {workOrdersData.length}
+            </span>
+          </>
+        }
+      >
+        {filteredWorkOrders.length === 0 ? (
+          <EmptyState title="No work orders match this search" hint="Try a customer name or a work order ID." />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Progress</TableHead>
+                <TableHead>Crew</TableHead>
+                <TableHead numeric>Due Date</TableHead>
+                <TableHead className="w-10">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredWorkOrders.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell className="num font-medium">{order.id}</TableCell>
+                  <TableCell className="whitespace-nowrap">{order.customerName}</TableCell>
+                  <TableCell className="whitespace-nowrap">{order.title}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={order.status} />
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={order.priority} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Meter value={order.progress} label={`${order.id} progress`} className="w-16" />
+                      <span className="num w-8 text-right text-xs">{order.progress}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">{order.assignedTo.join(", ")}</TableCell>
+                  <TableCell numeric>{formatDate(order.dueDate)}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Actions for ${order.id}`}>
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <ClipboardCheck className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[700px]">
+                            <DialogHeader>
+                              <DialogTitle>Work Order Details</DialogTitle>
+                              <DialogDescription>{order.title}</DialogDescription>
+                            </DialogHeader>
+                            <WorkOrderDetails workOrder={order} />
+                          </DialogContent>
+                        </Dialog>
+                        <DropdownMenuItem>
+                          <Timer className="mr-2 h-4 w-4" />
+                          Update Progress
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Users className="mr-2 h-4 w-4" />
+                          Assign Team
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Wrench className="mr-2 h-4 w-4" />
+                          Update Materials
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Panel>
+    </>
   );
 };
 

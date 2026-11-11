@@ -1,30 +1,14 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Search, 
-  Plus, 
-  MoreHorizontal,
-  DollarSign,
-  FileText,
-  Mail,
-  Printer,
-  Clock,
-  ArrowUpRight,
-  Download,
-  AlertCircle,
-  CheckCircle2,
-  Receipt
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowUpRight, Download, FileText, Mail, MoreHorizontal, Plus, Printer } from "lucide-react";
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState, Field, Panel, SearchInput } from "@/components/layout/Panel";
+import { StatStrip } from "@/components/layout/StatStrip";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -35,6 +19,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDate, formatINR } from "@/lib/format";
 
 // Mock invoices data
 const invoicesData = [
@@ -87,76 +73,85 @@ const InvoiceDetails = ({ invoice }: { invoice: Invoice }) => {
   const total = subtotal + tax;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h3 className="font-medium">Bill To</h3>
-          <div className="mt-2 space-y-1">
-            <p className="font-medium">{invoice.customerName}</p>
-            <p>Customer ID: {invoice.customerId}</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <h3 className="font-medium">Invoice Details</h3>
-          <div className="mt-2 space-y-1">
-            <p>Invoice #: {invoice.id}</p>
-            <p>Date: {invoice.date}</p>
-            <p>Due Date: {invoice.dueDate}</p>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <Field label="Bill To">
+          <span className="font-medium">{invoice.customerName}</span>
+          <span className="num block text-xs text-muted-foreground">Customer ID: {invoice.customerId}</span>
+        </Field>
+        <Field label="Project">
+          {invoice.projectTitle}
+          <span className="num block text-xs text-muted-foreground">Project ID: {invoice.projectId}</span>
+        </Field>
+        <Field label="Invoice #">
+          <span className="num">{invoice.id}</span>
+        </Field>
+        <Field label="Date">
+          <span className="num">{formatDate(invoice.date)}</span>
+        </Field>
+        <Field label="Due Date">
+          <span className="num">{formatDate(invoice.dueDate)}</span>
+        </Field>
+        <Field label="Status">
+          <StatusBadge status={invoice.status} />
+        </Field>
+      </dl>
 
-      <div>
-        <h3 className="font-medium mb-2">Project Details</h3>
-        <p>Project: {invoice.projectTitle}</p>
-        <p>Project ID: {invoice.projectId}</p>
-      </div>
-
-      <div>
-        <h3 className="font-medium mb-2">Items</h3>
-        <Table>
+      <div className="overflow-hidden rounded-md border">
+        <Table containerClassName="max-h-none">
           <TableHeader>
             <TableRow>
               <TableHead>Description</TableHead>
-              <TableHead className="text-right">Quantity/Hours</TableHead>
-              <TableHead className="text-right">Rate</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead numeric>Quantity/Hours</TableHead>
+              <TableHead numeric>Rate</TableHead>
+              <TableHead numeric>Amount</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invoice.items.map((item, index) => (
-              <TableRow key={index}>
+            {invoice.items.map((item) => (
+              <TableRow key={item.description}>
                 <TableCell>{item.description}</TableCell>
-                <TableCell className="text-right">{item.quantity || item.hours}</TableCell>
-                <TableCell className="text-right">₹{item.rate.toFixed(2)}</TableCell>
-                <TableCell className="text-right">₹{item.amount.toFixed(2)}</TableCell>
+                <TableCell numeric>{item.quantity || item.hours}</TableCell>
+                <TableCell numeric>{formatINR(item.rate, { paise: true })}</TableCell>
+                <TableCell numeric>{formatINR(item.amount, { paise: true })}</TableCell>
               </TableRow>
             ))}
-            <TableRow>
-              <TableCell colSpan={3} className="text-right font-medium">Subtotal</TableCell>
-              <TableCell className="text-right">₹{subtotal.toFixed(2)}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell colSpan={3} className="text-right font-medium">Tax (8%)</TableCell>
-              <TableCell className="text-right">₹{tax.toFixed(2)}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell colSpan={3} className="text-right font-medium">Total</TableCell>
-              <TableCell className="text-right font-medium">₹{total.toFixed(2)}</TableCell>
-            </TableRow>
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={3} className="text-right font-normal text-muted-foreground">
+                Subtotal
+              </TableCell>
+              <TableCell numeric className="font-normal">
+                {formatINR(subtotal, { paise: true })}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell colSpan={3} className="!border-t-0 text-right font-normal text-muted-foreground">
+                Tax (8%)
+              </TableCell>
+              <TableCell numeric className="!border-t-0 font-normal">
+                {formatINR(tax, { paise: true })}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell colSpan={3} className="text-right">
+                Total
+              </TableCell>
+              <TableCell numeric className="font-semibold">
+                {formatINR(total, { paise: true })}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
         </Table>
       </div>
 
-      <div>
-        <h3 className="font-medium">Notes</h3>
-        <p className="text-sm text-muted-foreground mt-1">{invoice.notes}</p>
-      </div>
-
-      <div>
-        <h3 className="font-medium">Terms</h3>
-        <p className="text-sm text-muted-foreground mt-1">{invoice.terms}</p>
-      </div>
+      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Field label="Notes" className="sm:col-span-2">
+          {invoice.notes}
+        </Field>
+        <Field label="Terms">{invoice.terms}</Field>
+      </dl>
     </div>
   );
 };
@@ -164,174 +159,139 @@ const InvoiceDetails = ({ invoice }: { invoice: Invoice }) => {
 const Invoicing = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredInvoices = invoicesData.filter(invoice =>
-    invoice.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    invoice.id.toLowerCase().includes(searchQuery.toLowerCase())
+  const query = searchQuery.trim().toLowerCase();
+  const filteredInvoices = invoicesData.filter(
+    (invoice) => invoice.customerName.toLowerCase().includes(query) || invoice.id.toLowerCase().includes(query)
   );
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <Badge className="bg-green-500">Paid</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-500">Pending</Badge>;
-      case 'overdue':
-        return <Badge className="bg-red-500">Overdue</Badge>;
-      default:
-        return <Badge>Unknown</Badge>;
-    }
-  };
-
   const totalRevenue = invoicesData.reduce((sum, invoice) => sum + invoice.amount, 0);
-  const pendingAmount = invoicesData
-    .filter(invoice => invoice.status === 'pending')
-    .reduce((sum, invoice) => sum + invoice.amount, 0);
+  const pendingInvoices = invoicesData.filter((invoice) => invoice.status === "pending");
+  const pendingAmount = pendingInvoices.reduce((sum, invoice) => sum + invoice.amount, 0);
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold">Invoicing & Billing</h1>
-                <p className="text-muted-foreground mt-2">Manage customer invoices and payments</p>
-              </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Invoice
-              </Button>
-            </div>
+    <>
+      <PageHeader
+        title="Invoicing & Billing"
+        description="Manage customer invoices and payments"
+        actions={
+          <Button>
+            <Plus />
+            Create Invoice
+          </Button>
+        }
+      />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Total Revenue</p>
-                    <p className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-green-500" />
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Pending Payments</p>
-                    <p className="text-2xl font-bold">₹{pendingAmount.toLocaleString()}</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-yellow-500" />
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Overdue</p>
-                    <p className="text-2xl font-bold">₹0</p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-red-500" />
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Payment Rate</p>
-                    <p className="text-2xl font-bold">95%</p>
-                  </div>
-                  <CheckCircle2 className="h-8 w-8 text-blue-500" />
-                </div>
-              </Card>
-            </div>
+      <StatStrip
+        stats={[
+          { label: "Total Revenue", value: formatINR(totalRevenue), hint: `${invoicesData.length} invoices` },
+          {
+            label: "Pending Payments",
+            value: formatINR(pendingAmount),
+            hint: `${pendingInvoices.length} awaiting payment`,
+            tone: pendingAmount > 0 ? "attention" : "default",
+          },
+          { label: "Overdue", value: formatINR(0), hint: "Nothing past due" },
+          { label: "Payment Rate", value: "95%", hint: "Paid on time" },
+        ]}
+      />
 
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search invoices..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-
-              <ScrollArea className="h-[500px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice #</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInvoices.map((invoice) => (
-                      <TableRow key={invoice.id}>
-                        <TableCell className="font-medium">{invoice.id}</TableCell>
-                        <TableCell>{invoice.customerName}</TableCell>
-                        <TableCell>{invoice.projectTitle}</TableCell>
-                        <TableCell>{invoice.date}</TableCell>
-                        <TableCell>{invoice.dueDate}</TableCell>
-                        <TableCell>₹{invoice.amount.toLocaleString()}</TableCell>
-                        <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[700px]">
-                                  <DialogHeader>
-                                    <DialogTitle>Invoice Details</DialogTitle>
-                                  </DialogHeader>
-                                  <InvoiceDetails invoice={invoice} />
-                                </DialogContent>
-                              </Dialog>
-                              <DropdownMenuItem>
-                                <Mail className="mr-2 h-4 w-4" />
-                                Send Invoice
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Download className="mr-2 h-4 w-4" />
-                                Download PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Printer className="mr-2 h-4 w-4" />
-                                Print Invoice
-                              </DropdownMenuItem>
-                              {invoice.status === 'pending' && (
-                                <DropdownMenuItem>
-                                  <ArrowUpRight className="mr-2 h-4 w-4" />
-                                  Record Payment
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+      <Panel
+        padded={false}
+        toolbar={
+          <>
+            <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search invoices..." />
+            <span className="num ml-auto text-xs text-muted-foreground">
+              {filteredInvoices.length} of {invoicesData.length}
+            </span>
+          </>
+        }
+      >
+        {filteredInvoices.length === 0 ? (
+          <EmptyState title="No invoices match this search" hint="Try a customer name or an invoice number." />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Invoice #</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Project</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead numeric>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-10">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInvoices.map((invoice) => (
+                <TableRow key={invoice.id}>
+                  <TableCell className="num font-medium">{invoice.id}</TableCell>
+                  <TableCell className="whitespace-nowrap">{invoice.customerName}</TableCell>
+                  <TableCell className="whitespace-nowrap">{invoice.projectTitle}</TableCell>
+                  <TableCell className="num">{formatDate(invoice.date)}</TableCell>
+                  <TableCell className="num">{formatDate(invoice.dueDate)}</TableCell>
+                  <TableCell numeric className="font-medium">
+                    {formatINR(invoice.amount, { paise: true })}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={invoice.status} />
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Actions for ${invoice.id}`}>
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[700px]">
+                            <DialogHeader>
+                              <DialogTitle>Invoice Details</DialogTitle>
+                              <DialogDescription>
+                                {invoice.id} for {invoice.customerName}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <InvoiceDetails invoice={invoice} />
+                          </DialogContent>
+                        </Dialog>
+                        <DropdownMenuItem>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send Invoice
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Download className="mr-2 h-4 w-4" />
+                          Download PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Printer className="mr-2 h-4 w-4" />
+                          Print Invoice
+                        </DropdownMenuItem>
+                        {invoice.status === "pending" && (
+                          <DropdownMenuItem>
+                            <ArrowUpRight className="mr-2 h-4 w-4" />
+                            Record Payment
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Panel>
+    </>
   );
 };
 
-export default Invoicing; 
+export default Invoicing;

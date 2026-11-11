@@ -1,29 +1,14 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Search, 
-  Plus, 
-  MoreHorizontal,
-  Building,
-  Package,
-  DollarSign,
-  ShoppingCart,
-  FileText,
-  Mail,
-  Phone,
-  History,
-  Star
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { FileText, History, Mail, MoreHorizontal, Phone, Plus, ShoppingCart } from "lucide-react";
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState, Field, Panel, SearchInput } from "@/components/layout/Panel";
+import { StatStrip } from "@/components/layout/StatStrip";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -34,7 +19,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDate, formatINR } from "@/lib/format";
 
 // Mock suppliers data
 const suppliersData = [
@@ -104,74 +90,67 @@ type Supplier = typeof suppliersData[0];
 
 const SupplierDetails = ({ supplier }: { supplier: Supplier }) => {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h3 className="font-medium">Contact Information</h3>
-          <div className="mt-2 space-y-1">
-            <p><span className="font-medium">Contact:</span> {supplier.contactName}</p>
-            <p><span className="font-medium">Email:</span> {supplier.email}</p>
-            <p><span className="font-medium">Phone:</span> {supplier.phone}</p>
-            <p><span className="font-medium">Address:</span> {supplier.address}</p>
-          </div>
-        </div>
-        <div>
-          <h3 className="font-medium">Business Details</h3>
-          <div className="mt-2 space-y-1">
-            <p><span className="font-medium">Payment Terms:</span> {supplier.paymentTerms}</p>
-            <p><span className="font-medium">Active Orders:</span> {supplier.activeOrders}</p>
-            <p><span className="font-medium">YTD Spend:</span> ₹{supplier.yearToDateSpend.toLocaleString()}</p>
-            <p><span className="font-medium">Rating:</span> {supplier.rating} / 5</p>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Field label="Contact">{supplier.contactName}</Field>
+        <Field label="Email">{supplier.email}</Field>
+        <Field label="Phone">
+          <span className="num">{supplier.phone}</span>
+        </Field>
+        <Field label="Payment Terms">{supplier.paymentTerms}</Field>
+        <Field label="Address" className="col-span-2 sm:col-span-1">
+          {supplier.address}
+        </Field>
+        <Field label="Active Orders">
+          <span className="num">{supplier.activeOrders}</span>
+        </Field>
+        <Field label="YTD Spend">
+          <span className="num">{formatINR(supplier.yearToDateSpend)}</span>
+        </Field>
+        <Field label="Rating">
+          <span className="num">{supplier.rating} / 5</span>
+        </Field>
+      </dl>
 
-      <div>
-        <h3 className="font-medium mb-2">Products</h3>
-        <Table>
+      <div className="overflow-hidden rounded-md border">
+        <Table containerClassName="max-h-none">
           <TableHeader>
             <TableRow>
-              <TableHead>Product</TableHead>
+              <TableHead>Products</TableHead>
               <TableHead>Unit</TableHead>
-              <TableHead>Price</TableHead>
+              <TableHead numeric>Price</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {supplier.products.map((product, index) => (
-              <TableRow key={index}>
+            {supplier.products.map((product) => (
+              <TableRow key={product.name}>
                 <TableCell>{product.name}</TableCell>
-                <TableCell>{product.unit}</TableCell>
-                <TableCell>₹{product.price.toFixed(2)}</TableCell>
+                <TableCell className="text-muted-foreground">{product.unit}</TableCell>
+                <TableCell numeric>{formatINR(product.price, { paise: true })}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
 
-      <div>
-        <h3 className="font-medium mb-2">Order History</h3>
-        <Table>
+      <div className="overflow-hidden rounded-md border">
+        <Table containerClassName="max-h-none">
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
+              <TableHead>Order History</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Amount</TableHead>
+              <TableHead numeric>Amount</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {supplier.orderHistory.map((order) => (
               <TableRow key={order.id}>
-                <TableCell>{order.id}</TableCell>
-                <TableCell>{order.date}</TableCell>
-                <TableCell>₹{order.amount.toLocaleString()}</TableCell>
+                <TableCell className="num">{order.id}</TableCell>
+                <TableCell className="num">{formatDate(order.date)}</TableCell>
+                <TableCell numeric>{formatINR(order.amount)}</TableCell>
                 <TableCell>
-                  <Badge className={
-                    order.status === 'delivered' ? 'bg-green-500' : 
-                    order.status === 'in_transit' ? 'bg-blue-500' : 'bg-yellow-500'
-                  }>
-                    {order.status.replace('_', ' ')}
-                  </Badge>
+                  <StatusBadge status={order.status} />
                 </TableCell>
               </TableRow>
             ))}
@@ -185,175 +164,142 @@ const SupplierDetails = ({ supplier }: { supplier: Supplier }) => {
 const Suppliers = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredSuppliers = suppliersData.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    supplier.id.toLowerCase().includes(searchQuery.toLowerCase())
+  const query = searchQuery.trim().toLowerCase();
+  const filteredSuppliers = suppliersData.filter(
+    (supplier) => supplier.name.toLowerCase().includes(query) || supplier.id.toLowerCase().includes(query)
   );
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-500">Active</Badge>;
-      case 'inactive':
-        return <Badge className="bg-gray-500">Inactive</Badge>;
-      case 'suspended':
-        return <Badge className="bg-red-500">Suspended</Badge>;
-      default:
-        return <Badge>Unknown</Badge>;
-    }
-  };
-
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold">Supplier Management</h1>
-                <p className="text-muted-foreground mt-2">Manage suppliers and vendor relationships</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline">
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  New Order
-                </Button>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Supplier
-                </Button>
-              </div>
-            </div>
+    <>
+      <PageHeader
+        title="Supplier Management"
+        description="Manage suppliers and vendor relationships"
+        actions={
+          <>
+            <Button variant="outline">
+              <ShoppingCart />
+              New Order
+            </Button>
+            <Button>
+              <Plus />
+              Add Supplier
+            </Button>
+          </>
+        }
+      />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Total Suppliers</p>
-                    <p className="text-2xl font-bold">24</p>
-                  </div>
-                  <Building className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Active Orders</p>
-                    <p className="text-2xl font-bold">12</p>
-                  </div>
-                  <Package className="h-8 w-8 text-blue-500" />
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Monthly Spend</p>
-                    <p className="text-2xl font-bold">₹45,250</p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-green-500" />
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Avg. Rating</p>
-                    <p className="text-2xl font-bold">4.6</p>
-                  </div>
-                  <Star className="h-8 w-8 text-yellow-500" />
-                </div>
-              </Card>
-            </div>
+      <StatStrip
+        stats={[
+          { label: "Total Suppliers", value: "24", hint: "On the vendor list" },
+          { label: "Active Orders", value: "12", hint: "Open purchase orders" },
+          { label: "Monthly Spend", value: formatINR(45250), hint: "This month" },
+          { label: "Avg. Rating", value: "4.6", hint: "Out of 5" },
+        ]}
+      />
 
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search suppliers..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-
-              <ScrollArea className="h-[500px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Active Orders</TableHead>
-                      <TableHead>YTD Spend</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredSuppliers.map((supplier) => (
-                      <TableRow key={supplier.id}>
-                        <TableCell className="font-medium">{supplier.id}</TableCell>
-                        <TableCell>{supplier.name}</TableCell>
-                        <TableCell>{supplier.type}</TableCell>
-                        <TableCell>{supplier.contactName}</TableCell>
-                        <TableCell>{supplier.activeOrders}</TableCell>
-                        <TableCell>₹{supplier.yearToDateSpend.toLocaleString()}</TableCell>
-                        <TableCell>{supplier.rating}</TableCell>
-                        <TableCell>{getStatusBadge(supplier.status)}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[700px]">
-                                  <DialogHeader>
-                                    <DialogTitle>Supplier Details</DialogTitle>
-                                  </DialogHeader>
-                                  <SupplierDetails supplier={supplier} />
-                                </DialogContent>
-                              </Dialog>
-                              <DropdownMenuItem>
-                                <ShoppingCart className="mr-2 h-4 w-4" />
-                                Place Order
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Mail className="mr-2 h-4 w-4" />
-                                Send Email
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Phone className="mr-2 h-4 w-4" />
-                                Call Supplier
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <History className="mr-2 h-4 w-4" />
-                                View History
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+      <Panel
+        padded={false}
+        toolbar={
+          <>
+            <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search suppliers..." />
+            <span className="num ml-auto text-xs text-muted-foreground">
+              {filteredSuppliers.length} of {suppliersData.length}
+            </span>
+          </>
+        }
+      >
+        {filteredSuppliers.length === 0 ? (
+          <EmptyState title="No suppliers match this search" hint="Try a supplier name or ID." />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Terms</TableHead>
+                <TableHead numeric>Active Orders</TableHead>
+                <TableHead numeric>YTD Spend</TableHead>
+                <TableHead numeric>Rating</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-10">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredSuppliers.map((supplier) => (
+                <TableRow key={supplier.id}>
+                  <TableCell className="num font-medium">{supplier.id}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <div className="font-medium">{supplier.name}</div>
+                    <div className="text-xs text-muted-foreground">{supplier.type}</div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <div>{supplier.contactName}</div>
+                    <div className="num text-xs text-muted-foreground">{supplier.phone}</div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">{supplier.paymentTerms}</TableCell>
+                  <TableCell numeric>{supplier.activeOrders}</TableCell>
+                  <TableCell numeric className="font-medium">
+                    {formatINR(supplier.yearToDateSpend)}
+                  </TableCell>
+                  <TableCell numeric>{supplier.rating.toFixed(1)}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={supplier.status} />
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Actions for ${supplier.name}`}>
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[700px]">
+                            <DialogHeader>
+                              <DialogTitle>Supplier Details</DialogTitle>
+                              <DialogDescription>
+                                {supplier.name}, {supplier.type}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <SupplierDetails supplier={supplier} />
+                          </DialogContent>
+                        </Dialog>
+                        <DropdownMenuItem>
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Place Order
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send Email
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Phone className="mr-2 h-4 w-4" />
+                          Call Supplier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <History className="mr-2 h-4 w-4" />
+                          View History
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Panel>
+    </>
   );
 };
 
-export default Suppliers; 
+export default Suppliers;
